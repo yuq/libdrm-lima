@@ -38,6 +38,7 @@ AM_DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-freedreno-kgsl\
 	--enable-tegra-experimental-api \
 	--enable-etnaviv-experimental-api \
+	--enable-lima-experimental-api \
 	--enable-install-test-programs \
 	--enable-cairo-tests \
 	--enable-manpages \
@@ -90,6 +91,10 @@ if HAVE_ETNAVIV
 ETNAVIV_SUBDIR = etnaviv
 endif
 
+if HAVE_LIMA
+LIMA_SUBDIR = lima
+endif
+
 if BUILD_MANPAGES
 if HAVE_MANPAGES_STYLESHEET
 MAN_SUBDIR = man
@@ -109,6 +114,7 @@ SUBDIRS = \
 	$(TEGRA_SUBDIR) \
 	$(VC4_SUBDIR) \
 	$(ETNAVIV_SUBDIR) \
+	$(LIMA_SUBDIR) \
 	tests \
 	$(MAN_SUBDIR)
 

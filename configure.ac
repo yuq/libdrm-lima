@@ -138,6 +138,11 @@ AC_ARG_ENABLE(etnaviv-experimental-api,
 	      [Enable support for etnaviv's experimental API (default: disabled)]),
 	      [ETNAVIV=$enableval], [ETNAVIV=no])
 
+AC_ARG_ENABLE(lima-experimental-api,
+	      AS_HELP_STRING([--enable-lima-experimental-api],
+	      [Enable support for lima's experimental API (default: disabled)]),
+	      [LIMA=$enableval], [LIMA=no])
+
 AC_ARG_ENABLE(install-test-programs,
 		  AS_HELP_STRING([--enable-install-test-programs],
 		  [Install test programs (default: no)]),
@@ -283,6 +288,9 @@ if test "x$drm_cv_atomic_primitives" = "xnone"; then
 
 	LIBDRM_ATOMICS_NOT_FOUND_MSG($ETNAVIV, etnaviv, Vivante, etnaviv-experimental-api)
 	ETNAVIV=no
+
+	LIBDRM_ATOMICS_NOT_FOUND_MSG($LIMA, lima, Mali, lima-experimental-api)
+	LIMA=no
 else
 	if test "x$INTEL" = xauto; then
 		case $host_cpu in
@@ -427,6 +435,11 @@ if test "x$ETNAVIV" = xyes; then
 	AC_DEFINE(HAVE_ETNAVIV, 1, [Have etnaviv support])
 fi
 
+AM_CONDITIONAL(HAVE_LIMA, [test "x$LIMA" = xyes])
+if test "x$LIMA" = xyes; then
+	AC_DEFINE(HAVE_LIMA, 1, [Have lima support])
+fi
+
 AM_CONDITIONAL(HAVE_INSTALL_TESTS, [test "x$INSTALL_TESTS" = xyes])
 if test "x$INSTALL_TESTS" = xyes; then
 	AC_DEFINE(HAVE_INSTALL_TESTS, 1, [Install test programs])
@@ -533,6 +546,8 @@ AC_CONFIG_FILES([
 	vc4/libdrm_vc4.pc
 	etnaviv/Makefile
 	etnaviv/libdrm_etnaviv.pc
+	lima/Makefile
+	lima/libdrm_lima.pc
 	tests/Makefile
 	tests/modeprint/Makefile
 	tests/modetest/Makefile
@@ -546,6 +561,7 @@ AC_CONFIG_FILES([
 	tests/tegra/Makefile
 	tests/nouveau/Makefile
 	tests/etnaviv/Makefile
+	tests/lima/Makefile
 	tests/util/Makefile
 	man/Makefile
 	libdrm.pc])
@@ -566,4 +582,5 @@ echo "  Freedreno API  $FREEDRENO (kgsl: $FREEDRENO_KGSL)"
 echo "  Tegra API      $TEGRA"
 echo "  VC4 API        $VC4"
 echo "  Etnaviv API    $ETNAVIV"
+echo "  Lima API       $LIMA"
 echo ""

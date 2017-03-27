@@ -26,6 +26,10 @@ if HAVE_ETNAVIV
 SUBDIRS += etnaviv
 endif
 
+if HAVE_LIMA
+SUBDIRS += lima
+endif
+
 if HAVE_NOUVEAU
 SUBDIRS += nouveau
 endif
