@@ -21,35 +21,59 @@
  *
  */
 
-#ifndef _LIMA_H_
-#define _LIMA_H_
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
-#include <stdint.h>
+#include <stdlib.h>
+#include <errno.h>
 
-enum lima_gpu_type {
-	GPU_MALI400,
-};
+#include "xf86drm.h"
+#include "lima_priv.h"
+#include "lima.h"
+#include "lima_drm.h"
 
-struct lima_device_info {
-	enum lima_gpu_type gpu_type;
-	uint32_t num_pp;
-};
-
-struct lima_bo_create_request {
-	uint32_t size;
-	uint32_t flags;
-};
-
-typedef struct lima_device *lima_device_handle;
-typedef struct lima_bo *lima_bo_handle;
-
-int lima_device_create(int fd, lima_device_handle *dev);
-void lima_device_delete(lima_device_handle dev);
-
-int lima_device_query_info(lima_device_handle dev, struct lima_device_info *info);
 
 int lima_bo_create(lima_device_handle dev, struct lima_bo_create_request *request,
-		   lima_bo_handle *bo_handle);
-int lima_bo_free(lima_bo_handle bo);
+		   lima_bo_handle *bo_handle)
+{
+	int err;
+	struct lima_bo *bo;
+	struct drm_lima_gem_create drm_request = {
+		.size = request->size,
+		.flags = request->flags,
+	};
 
-#endif /* _LIMA_H_ */
+	bo = calloc(1, sizeof(*bo));
+	if (!bo)
+		return -ENOMEM;
+
+	err = drmIoctl(dev->fd, DRM_IOCTL_LIMA_GEM_CREATE, &drm_request);
+	if (err) {
+		free(bo);
+		return err;
+	}
+
+	bo->dev = dev;
+	bo->size = drm_request.size;
+	bo->handle = drm_request.handle;
+	atomic_set(&bo->refcnt, 1);
+
+	*bo_handle = bo;
+	return 0;
+}
+
+int lima_bo_free(lima_bo_handle bo)
+{
+	int err;
+	struct drm_gem_close req = {
+		.handle = bo->handle,
+	};
+
+	if (!atomic_dec_and_test(&bo->refcnt))
+		return 0;
+
+	err = drmIoctl(bo->dev->fd, DRM_IOCTL_GEM_CLOSE, &req);
+	free(bo);
+	return err;
+}

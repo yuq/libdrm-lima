@@ -13,6 +13,8 @@ _init
 lima_device_create
 lima_device_delete
 lima_device_query_info
+lima_bo_create
+lima_bo_free
 EOF
 done)
 

@@ -51,6 +51,8 @@ int main(int argc, char **argv)
 	drmVersionPtr version;
 	lima_device_handle dev;
 	struct lima_device_info info;
+	lima_bo_handle bo;
+	struct lima_bo_create_request bo_create_req;
 
 	assert(argc > 1);
 	assert((fd = open(argv[1], O_RDWR)) >= 0);
@@ -67,6 +69,12 @@ int main(int argc, char **argv)
 
 	assert(!lima_device_query_info(dev, &info));
 	printf("Lima gpu is %sMP%d\n", gpu_name(info.gpu_type), info.num_pp);
+
+	bo_create_req.size = 4096;
+	bo_create_req.flags = 0;
+	assert(!lima_bo_create(dev, &bo_create_req, &bo));
+	printf("create bo success\n");
+	assert(!lima_bo_free(bo));
 
 	lima_device_delete(dev);
 	close(fd);

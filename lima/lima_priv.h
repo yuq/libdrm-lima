@@ -25,8 +25,20 @@
 #ifndef _LIMA_PRIV_H_
 #define _LIMA_PRIV_H_
 
+#include <stdint.h>
+
+#include "xf86atomic.h"
+
 struct lima_device {
 	int fd;
+};
+
+struct lima_bo {
+	atomic_t refcnt;
+	struct lima_device *dev;
+
+	uint32_t size;
+	uint32_t handle;
 };
 
 #endif /* _LIMA_PRIV_H_ */
