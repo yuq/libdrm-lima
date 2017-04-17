@@ -51,5 +51,6 @@ int lima_device_query_info(lima_device_handle dev, struct lima_device_info *info
 int lima_bo_create(lima_device_handle dev, struct lima_bo_create_request *request,
 		   lima_bo_handle *bo_handle);
 int lima_bo_free(lima_bo_handle bo);
+void *lima_bo_map(lima_bo_handle bo);
 
 #endif /* _LIMA_H_ */

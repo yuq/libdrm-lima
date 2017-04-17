@@ -39,6 +39,8 @@ struct lima_bo {
 
 	uint32_t size;
 	uint32_t handle;
+	uint64_t offset;
+	void *map;
 };
 
 #endif /* _LIMA_PRIV_H_ */

@@ -28,6 +28,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -53,6 +54,7 @@ int main(int argc, char **argv)
 	struct lima_device_info info;
 	lima_bo_handle bo;
 	struct lima_bo_create_request bo_create_req;
+	char *cpu, cpu_partten[] = "this is a test string for mmap bo content\n";
 
 	assert(argc > 1);
 	assert((fd = open(argv[1], O_RDWR)) >= 0);
@@ -74,6 +76,13 @@ int main(int argc, char **argv)
 	bo_create_req.flags = 0;
 	assert(!lima_bo_create(dev, &bo_create_req, &bo));
 	printf("create bo success\n");
+
+	assert((cpu = lima_bo_map(bo)) != NULL);
+	memset(cpu, 0, 4096);
+	strcpy(cpu, cpu_partten);
+	assert(!strcmp(cpu_partten, cpu));
+	printf("mmap bo test success\n");
+
 	assert(!lima_bo_free(bo));
 
 	lima_device_delete(dev);

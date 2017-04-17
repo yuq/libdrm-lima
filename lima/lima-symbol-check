@@ -15,6 +15,7 @@ lima_device_delete
 lima_device_query_info
 lima_bo_create
 lima_bo_free
+lima_bo_map
 EOF
 done)
 

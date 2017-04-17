@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "libdrm_macros.h"
 #include "xf86drm.h"
 #include "lima_priv.h"
 #include "lima.h"
@@ -76,4 +77,27 @@ int lima_bo_free(lima_bo_handle bo)
 	err = drmIoctl(bo->dev->fd, DRM_IOCTL_GEM_CLOSE, &req);
 	free(bo);
 	return err;
+}
+
+void *lima_bo_map(lima_bo_handle bo)
+{
+	if (!bo->map) {
+		if (!bo->offset) {
+			struct drm_lima_gem_info req = {
+				.handle = bo->handle,
+			};
+
+			if (drmIoctl(bo->dev->fd, DRM_IOCTL_LIMA_GEM_INFO, &req))
+				return NULL;
+			else
+				bo->offset = req.offset;
+		}
+
+		bo->map = drm_mmap(0, bo->size, PROT_READ | PROT_WRITE,
+				   MAP_SHARED, bo->dev->fd, bo->offset);
+		if (bo->map == MAP_FAILED)
+			bo->map = NULL;
+	}
+
+	return bo->map;
 }
