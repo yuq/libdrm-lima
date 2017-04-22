@@ -26,11 +26,28 @@
 #define _LIMA_PRIV_H_
 
 #include <stdint.h>
+#include <pthread.h>
 
 #include "xf86atomic.h"
+#include "util_double_list.h"
+#include "libdrm_macros.h"
+
+#define LIMA_PAGE_SIZE 4096
+
+struct lima_va_hole {
+	struct list_head list;
+	uint64_t offset;
+	uint64_t size;
+};
+
+struct lima_va_mgr {
+	pthread_mutex_t lock;
+	struct list_head va_holes;
+};
 
 struct lima_device {
 	int fd;
+	struct lima_va_mgr vamgr;
 };
 
 struct lima_bo {
@@ -42,5 +59,8 @@ struct lima_bo {
 	uint64_t offset;
 	void *map;
 };
+
+drm_private int lima_vamgr_init(struct lima_va_mgr *mgr);
+drm_private void lima_vamgr_fini(struct lima_va_mgr *mgr);
 
 #endif /* _LIMA_PRIV_H_ */

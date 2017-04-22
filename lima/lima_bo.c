@@ -101,3 +101,27 @@ void *lima_bo_map(lima_bo_handle bo)
 
 	return bo->map;
 }
+
+int lima_bo_va_map(lima_bo_handle bo, uint32_t va, uint32_t flags)
+{
+	struct drm_lima_gem_va req = {
+		.handle = bo->handle,
+		.op = LIMA_VA_OP_MAP,
+		.flags = flags,
+		.va = va,
+	};
+
+	return drmIoctl(bo->dev->fd, DRM_IOCTL_LIMA_GEM_VA, &req);
+}
+
+int lima_bo_va_unmap(lima_bo_handle bo, uint32_t va)
+{
+	struct drm_lima_gem_va req = {
+		.handle = bo->handle,
+		.op = LIMA_VA_OP_UNMAP,
+		.flags = 0,
+		.va = va,
+	};
+
+	return drmIoctl(bo->dev->fd, DRM_IOCTL_LIMA_GEM_VA, &req);
+}

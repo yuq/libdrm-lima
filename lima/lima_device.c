@@ -35,6 +35,7 @@
 
 int lima_device_create(int fd, lima_device_handle *dev)
 {
+	int err;
 	struct lima_device *ldev;
 
 	ldev = calloc(1, sizeof(*ldev));
@@ -42,6 +43,9 @@ int lima_device_create(int fd, lima_device_handle *dev)
 		return -ENOMEM;
 
 	ldev->fd = fd;
+	err = lima_vamgr_init(&ldev->vamgr);
+	if (err)
+		return err;
 
 	*dev = ldev;
 	return 0;
@@ -49,6 +53,7 @@ int lima_device_create(int fd, lima_device_handle *dev)
 
 void lima_device_delete(lima_device_handle dev)
 {
+	lima_vamgr_fini(&dev->vamgr);
 	free(dev);
 }
 

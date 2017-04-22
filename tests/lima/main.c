@@ -55,6 +55,7 @@ int main(int argc, char **argv)
 	lima_bo_handle bo;
 	struct lima_bo_create_request bo_create_req;
 	char *cpu, cpu_partten[] = "this is a test string for mmap bo content\n";
+	uint32_t va;
 
 	assert(argc > 1);
 	assert((fd = open(argv[1], O_RDWR)) >= 0);
@@ -82,6 +83,51 @@ int main(int argc, char **argv)
 	strcpy(cpu, cpu_partten);
 	assert(!strcmp(cpu_partten, cpu));
 	printf("mmap bo test success\n");
+
+	{
+		uint32_t va1, size1 = 4096, va2, size2 = 4096 * 2, va3, size3 = 4096 * 5;
+		uint32_t rec;
+		/* alloc test */
+		assert(!lima_va_range_alloc(dev, size1, &va1));
+		assert(va1 == 0);
+		assert(!lima_va_range_alloc(dev, size2, &va2));
+		assert(va2 == va1 + size1);
+		assert(!lima_va_range_alloc(dev, size3, &va3));
+		assert(va3 == va2 + size2);
+		/* free middle test */
+		rec = va2;
+		assert(!lima_va_range_free(dev, size2, va2));
+		assert(!lima_va_range_alloc(dev, size2, &va2));
+		assert(va2 == rec);
+		/* free front test */
+		rec = va1;
+		assert(!lima_va_range_free(dev, size1, va1));
+		assert(!lima_va_range_alloc(dev, size1, &va1));
+		assert(va1 == rec);
+		/* free back test */
+		rec = va3;
+		assert(!lima_va_range_free(dev, size3, va3));
+		assert(!lima_va_range_alloc(dev, size3, &va3));
+		assert(va3 == rec);
+		/* alloc next hole test */
+		assert(!lima_va_range_free(dev, size1, va1));
+		size1 = 4096 * 2;
+		assert(!lima_va_range_alloc(dev, size1, &va1));
+		assert(va1 == va3 + size3);
+		/* free all test */
+		assert(!lima_va_range_free(dev, size3, va3));
+		assert(!lima_va_range_free(dev, size2, va2));
+		assert(!lima_va_range_free(dev, size1, va1));
+
+		printf("bo va range success\n");
+	}
+
+	assert(!lima_va_range_alloc(dev, 4096, &va));
+	assert(va == 0);
+	assert(!lima_bo_va_map(bo, va, 0));
+	assert(!lima_bo_va_unmap(bo, va));
+	assert(!lima_va_range_free(dev, 4096, va));
+	printf("bo va map success\n");
 
 	assert(!lima_bo_free(bo));
 
