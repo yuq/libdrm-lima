@@ -20,6 +20,12 @@ lima_va_range_alloc
 lima_va_range_free
 lima_bo_va_map
 lima_bo_va_unmap
+lima_submit_create
+lima_submit_delete
+lima_submit_add_bo
+lima_submit_remove_bo
+lima_submit_set_frame
+lima_submit_start
 EOF
 done)
 

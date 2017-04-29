@@ -42,6 +42,7 @@ struct lima_bo_create_request {
 
 typedef struct lima_device *lima_device_handle;
 typedef struct lima_bo *lima_bo_handle;
+typedef struct lima_submit *lima_submit_handle;
 
 int lima_device_create(int fd, lima_device_handle *dev);
 void lima_device_delete(lima_device_handle dev);
@@ -58,5 +59,15 @@ int lima_va_range_free(lima_device_handle dev, uint32_t size, uint32_t va);
 
 int lima_bo_va_map(lima_bo_handle bo, uint32_t va, uint32_t flags);
 int lima_bo_va_unmap(lima_bo_handle bo, uint32_t va);
+
+#define LIMA_SUBMIT_BO_FLAG_READ   0x01
+#define LIMA_SUBMIT_BO_FLAG_WRITE  0x02
+
+int lima_submit_create(lima_device_handle dev, uint32_t pipe, lima_submit_handle *submit);
+void lima_submit_delete(lima_submit_handle submit);
+int lima_submit_add_bo(lima_submit_handle submit, lima_bo_handle bo, uint32_t flags);
+void lima_submit_remove_bo(lima_submit_handle submit, lima_bo_handle bo);
+void lima_submit_set_frame(lima_submit_handle submit, void *frame, uint32_t size);
+int lima_submit_start(lima_submit_handle submit);
 
 #endif /* _LIMA_H_ */

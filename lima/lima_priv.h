@@ -34,6 +34,8 @@
 
 #define LIMA_PAGE_SIZE 4096
 
+#define VOID2U64(x) ((uint64_t)(unsigned long)(x))
+
 struct lima_va_hole {
 	struct list_head list;
 	uint64_t offset;
@@ -58,6 +60,19 @@ struct lima_bo {
 	uint32_t handle;
 	uint64_t offset;
 	void *map;
+};
+
+struct lima_submit {
+	struct lima_device *dev;
+	uint32_t pipe;
+	uint32_t fence;
+
+	struct drm_lima_gem_submit_bo *bos;
+	uint32_t max_bos;
+	uint32_t nr_bos;
+
+	void *frame;
+	uint32_t frame_size;
 };
 
 drm_private int lima_vamgr_init(struct lima_va_mgr *mgr);

@@ -2,6 +2,7 @@ LIBDRM_LIMA_FILES := \
 	lima_device.c \
 	lima_bo.c \
 	lima_vamgr.c \
+	lima_submit.c \
 	lima_priv.h
 
 LIBDRM_LIMA_H_FILES := \
