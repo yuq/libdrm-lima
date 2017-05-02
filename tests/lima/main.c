@@ -150,6 +150,8 @@ static void submit_test(lima_device_handle dev)
 	lima_submit_set_frame(submit, frame, sizeof(frame));
 	assert(!lima_submit_start(submit));
 
+	assert(!lima_submit_wait(submit, 1000000000, true));
+
 	lima_submit_delete(submit);
 	for (i = 0; i < SUBMIT_TEST_NUM_BOS; i++) {
 		assert(!lima_bo_va_unmap(bos[i], vas[i]));

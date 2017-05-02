@@ -24,6 +24,7 @@
 #ifndef _LIMA_H_
 #define _LIMA_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 enum lima_gpu_type {
@@ -69,5 +70,7 @@ int lima_submit_add_bo(lima_submit_handle submit, lima_bo_handle bo, uint32_t fl
 void lima_submit_remove_bo(lima_submit_handle submit, lima_bo_handle bo);
 void lima_submit_set_frame(lima_submit_handle submit, void *frame, uint32_t size);
 int lima_submit_start(lima_submit_handle submit);
+int lima_submit_wait(lima_submit_handle submit, uint64_t timeout_ns, bool relative);
+
 
 #endif /* _LIMA_H_ */

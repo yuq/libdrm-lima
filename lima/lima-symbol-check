@@ -26,6 +26,7 @@ lima_submit_add_bo
 lima_submit_remove_bo
 lima_submit_set_frame
 lima_submit_start
+lima_submit_wait
 EOF
 done)
 
