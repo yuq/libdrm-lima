@@ -102,6 +102,17 @@ void *lima_bo_map(lima_bo_handle bo)
 	return bo->map;
 }
 
+int lima_bo_unmap(lima_bo_handle bo)
+{
+	int err = 0;
+
+	if (bo->map) {
+		err = drm_munmap(bo->map, bo->size);
+		bo->map = NULL;
+	}
+	return err;
+}
+
 int lima_bo_va_map(lima_bo_handle bo, uint32_t va, uint32_t flags)
 {
 	struct drm_lima_gem_va req = {

@@ -54,6 +54,7 @@ int lima_bo_create(lima_device_handle dev, struct lima_bo_create_request *reques
 		   lima_bo_handle *bo_handle);
 int lima_bo_free(lima_bo_handle bo);
 void *lima_bo_map(lima_bo_handle bo);
+int lima_bo_unmap(lima_bo_handle bo);
 
 int lima_va_range_alloc(lima_device_handle dev, uint32_t size, uint32_t *va);
 int lima_va_range_free(lima_device_handle dev, uint32_t size, uint32_t va);
