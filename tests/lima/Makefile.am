@@ -1,4 +1,5 @@
 AM_CFLAGS = \
+	-I $(top_srcdir)/tests \
 	-I $(top_srcdir)/include/drm \
 	-I $(top_srcdir)/lima \
 	-I $(top_srcdir)
