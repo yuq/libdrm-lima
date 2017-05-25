@@ -33,6 +33,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#ifdef LIMA_TEST_HAVE_LIBPNG
+#include <png.h>
+#endif
+
 #include "lima.h"
 #include "lima_drm.h"
 #include "xf86drm.h"
@@ -138,9 +142,15 @@ struct test_bo {
 	uint32_t size;
 	uint32_t va;
 	void *cpu;
-	uint32_t submit_flags;
+	uint32_t submit_flags[2];
 	struct init_data *init_data;
 	int num_init_data;
+};
+
+struct lima_dumped_mem_content {
+	unsigned int offset;
+	unsigned int size;
+	unsigned int memory[];
 };
 
 #define INIT_DATA(d, o) { .data = d, .offset = o, .size = sizeof(d) }
@@ -163,15 +173,75 @@ static void free_test_bo(lima_device_handle dev, struct test_bo *bo)
 	assert(!lima_bo_free(bo->bo));
 }
 
-static void gp_submit_test(lima_device_handle dev)
+#ifdef LIMA_TEST_HAVE_LIBPNG
+void write_image(char *filename, int width, int height, void *buffer, char *title)
+{
+	int code = 0, i;
+	FILE *fp = NULL;
+	png_structp png_ptr = NULL;
+	png_infop info_ptr = NULL;
+
+	fp = fopen(filename, "wb");
+	if (fp == NULL) {
+		printf("Could not open file %s for writing\n", filename);
+		return;
+	}
+
+	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	if (png_ptr == NULL) {
+		printf("Could not allocate write struct\n");
+		goto out0;
+	}
+
+	info_ptr = png_create_info_struct(png_ptr);
+	if (info_ptr == NULL) {
+		printf("Could not allocate info struct\n");
+		goto out1;
+	}
+
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		printf("Error during png creation\n");
+		goto out2;
+	}
+
+	png_init_io(png_ptr, fp);
+
+	png_set_IHDR(png_ptr, info_ptr, width, height,
+		     8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE,
+		     PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+	if (title != NULL) {
+		png_text title_text;
+		title_text.compression = PNG_TEXT_COMPRESSION_NONE;
+		title_text.key = "Title";
+		title_text.text = title;
+		png_set_text(png_ptr, info_ptr, &title_text, 1);
+	}
+
+	png_write_info(png_ptr, info_ptr);
+
+	for (i = 0; i < height; i++)
+		png_write_row(png_ptr, (png_bytep)buffer + i * width * 4);
+
+	png_write_end(png_ptr, NULL);
+
+out2:
+	png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
+out1:
+	png_destroy_write_struct(&png_ptr, NULL);
+out0:
+	fclose(fp);
+}
+#endif
+
+static void submit_test(lima_device_handle dev)
 {
 #include "red_triangle.h"
 
 	int i, j;
 	lima_submit_handle submit;
 
-	assert(!lima_submit_create(dev, 0, &submit));
-
+	/* create and init bos */
 	for (i = 0; i < ARRAY_SIZE(bos); i++) {
 		create_test_bo(dev, &bos[i]);
 		if (bos[i].init_data && bos[i].num_init_data) {
@@ -181,21 +251,46 @@ static void gp_submit_test(lima_device_handle dev)
 				       init_data->data, init_data->size);
 			}
 		}
-		assert(!lima_submit_add_bo(submit, bos[i].bo, bos[i].submit_flags));
 	}
 
-	lima_submit_set_frame(submit, &frame, sizeof(frame));
+	/* test gp */
+	assert(!lima_submit_create(dev, 0, &submit));
+	for (i = 0; i < ARRAY_SIZE(bos) - 1; i++)
+		assert(!lima_submit_add_bo(submit, bos[i].bo, bos[i].submit_flags[0]));
+
+	lima_submit_set_frame(submit, &gp_frame, sizeof(gp_frame));
 	assert(!lima_submit_start(submit));
 
 	assert(!lima_submit_wait(submit, 1000000000, true));
 
 	assert(!memcmp(bos[0].cpu + 0x14400, varying, sizeof(varying)));
 
+	for (i = 0; i < ARRAY_SIZE(plbs); i++)
+		assert(!memcmp(bos[1].cpu + plbs[i]->offset, plbs[i]->memory, plbs[i]->size));
+
 	lima_submit_delete(submit);
+	printf("gp submit test success\n");
+
+	/* test pp */
+	assert(!lima_submit_create(dev, 1, &submit));
+	for (i = 0; i < ARRAY_SIZE(bos); i++)
+		assert(!lima_submit_add_bo(submit, bos[i].bo, bos[i].submit_flags[1]));
+
+	lima_submit_set_frame(submit, &pp_frame, sizeof(pp_frame));
+	assert(!lima_submit_start(submit));
+
+	assert(!lima_submit_wait(submit, 1000000000, true));
+
+#ifdef LIMA_TEST_HAVE_LIBPNG
+	write_image("output.png", 800, 480, bos[2].cpu, "mali");
+#endif
+
+	lima_submit_delete(submit);
+	printf("pp submit test success\n");
+
 	for (i = 0; i < ARRAY_SIZE(bos); i++)
 		free_test_bo(dev, &bos[i]);
-
-	printf("gp submit test success\n");
+	printf("submit test success\n");
 }
 
 int main(int argc, char **argv)
@@ -204,9 +299,11 @@ int main(int argc, char **argv)
 	drmVersionPtr version;
 	lima_device_handle dev;
 	struct lima_device_info info;
+	char *dri_dev = "/dev/dri/card0";
 
-	assert(argc > 1);
-	assert((fd = open(argv[1], O_RDWR)) >= 0);
+	if (argc > 1)
+		dri_dev = argv[1];
+	assert((fd = open(dri_dev, O_RDWR)) >= 0);
 
 	assert((version = drmGetVersion(fd)));
 	printf("Version: %d.%d.%d\n", version->version_major,
@@ -225,7 +322,7 @@ int main(int argc, char **argv)
 
 	bo_test(dev);
 
-	gp_submit_test(dev);
+	submit_test(dev);
 
 	lima_device_delete(dev);
 	close(fd);

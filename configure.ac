@@ -435,6 +435,14 @@ if test "x$ETNAVIV" = xyes; then
 	AC_DEFINE(HAVE_ETNAVIV, 1, [Have etnaviv support])
 fi
 
+if test "x$LIMA" != xno; then
+	# Detect libpng library
+	PKG_CHECK_MODULES([LIBPNG], [libpng], [have_libpng=yes], [have_libpng=no])
+else
+	have_libpng=no
+fi
+AM_CONDITIONAL(HAVE_LIBPNG, [test "x$have_libpng" != "xno"])
+
 AM_CONDITIONAL(HAVE_LIMA, [test "x$LIMA" = xyes])
 if test "x$LIMA" = xyes; then
 	AC_DEFINE(HAVE_LIMA, 1, [Have lima support])

@@ -7,6 +7,11 @@ AM_CFLAGS = \
 LDADD = $(top_builddir)/libdrm.la \
 	$(top_builddir)/lima/libdrm_lima.la
 
+if HAVE_LIBPNG
+AM_CFLAGS += $(LIBPNG_CFLAGS) -DLIMA_TEST_HAVE_LIBPNG
+LDADD += $(LIBPNG_LIBS)
+endif
+
 if HAVE_INSTALL_TESTS
 bin_PROGRAMS = \
 	lima_test
