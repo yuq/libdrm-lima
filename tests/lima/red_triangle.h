@@ -5214,7 +5214,7 @@ struct drm_lima_m400_gp_frame gp_frame = {
 
 struct drm_lima_m400_pp_frame pp_frame = {
 	.frame = {
-		.plbu_array_address = 0x1006f000,
+		.plbu_array_address = 0x0,
 		.render_address = 0x10000000,
 		.unused_0 = 0x0,
 		.flags = 0x2,
@@ -5256,4 +5256,9 @@ struct drm_lima_m400_pp_frame pp_frame = {
 
 	.wb[1] = {0},
 	.wb[2] = {0},
+
+	.plbu_array_address = { 0x1006f000, 0x10071f00, 0, 0 },
+	.fragment_stack_address = {0},
+
+	.num_pp = 2,
 };
