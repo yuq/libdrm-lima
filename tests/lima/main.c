@@ -109,7 +109,8 @@ static void bo_test(lima_device_handle dev)
 {
 	lima_bo_handle bo;
 	char *cpu, cpu_partten[] = "this is a test string for mmap bo content\n";
-	uint32_t va, size = 4096;
+	uint32_t va, size = 4096, handle;
+	struct lima_bo_import_result result;
 
 	bo = create_bo(dev, size, 0);
 	printf("create bo success\n");
@@ -126,6 +127,20 @@ static void bo_test(lima_device_handle dev)
 	assert(!lima_bo_va_unmap(bo, va));
 	assert(!lima_va_range_free(dev, size, va));
 	printf("bo va map/unmap success\n");
+
+	assert(!lima_bo_export(bo, lima_bo_handle_type_gem_flink_name, &handle));
+	assert(handle);
+	assert(!lima_bo_import(dev, lima_bo_handle_type_gem_flink_name, handle, &result));
+	assert(result.bo == bo);
+	assert(!lima_bo_free(bo));
+	printf("bo flink name export/import success\n");
+
+	assert(!lima_bo_export(bo, lima_bo_handle_type_kms, &handle));
+	assert(handle);
+	assert(!lima_bo_import(dev, lima_bo_handle_type_kms, handle, &result));
+	assert(result.bo == bo);
+	assert(!lima_bo_free(bo));
+	printf("bo kms export/import success\n");
 
 	assert(!lima_bo_free(bo));
 	printf("bo free success\n");
