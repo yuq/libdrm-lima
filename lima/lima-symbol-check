@@ -17,6 +17,8 @@ lima_bo_create
 lima_bo_free
 lima_bo_map
 lima_bo_unmap
+lima_bo_export
+lima_bo_import
 lima_va_range_alloc
 lima_va_range_free
 lima_bo_va_map

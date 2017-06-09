@@ -31,6 +31,11 @@ enum lima_gpu_type {
 	GPU_MALI400,
 };
 
+enum lima_bo_handle_type {
+	lima_bo_handle_type_gem_flink_name = 0,
+	lima_bo_handle_type_kms = 1,
+};
+
 struct lima_device_info {
 	enum lima_gpu_type gpu_type;
 	uint32_t num_pp;
@@ -45,6 +50,11 @@ typedef struct lima_device *lima_device_handle;
 typedef struct lima_bo *lima_bo_handle;
 typedef struct lima_submit *lima_submit_handle;
 
+struct lima_bo_import_result {
+	lima_bo_handle bo;
+	uint32_t size;
+};
+
 int lima_device_create(int fd, lima_device_handle *dev);
 void lima_device_delete(lima_device_handle dev);
 
@@ -55,6 +65,10 @@ int lima_bo_create(lima_device_handle dev, struct lima_bo_create_request *reques
 int lima_bo_free(lima_bo_handle bo);
 void *lima_bo_map(lima_bo_handle bo);
 int lima_bo_unmap(lima_bo_handle bo);
+int lima_bo_export(lima_bo_handle bo, enum lima_bo_handle_type type,
+		   uint32_t *handle);
+int lima_bo_import(lima_device_handle dev, enum lima_bo_handle_type type,
+		   uint32_t handle, struct lima_bo_import_result *result);
 
 int lima_va_range_alloc(lima_device_handle dev, uint32_t size, uint32_t *va);
 int lima_va_range_free(lima_device_handle dev, uint32_t size, uint32_t va);

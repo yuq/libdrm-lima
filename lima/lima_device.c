@@ -45,14 +45,38 @@ int lima_device_create(int fd, lima_device_handle *dev)
 	ldev->fd = fd;
 	err = lima_vamgr_init(&ldev->vamgr);
 	if (err)
-		return err;
+		goto err_out0;
 
+	ldev->bo_handles = drmHashCreate();
+	if (!ldev->bo_handles) {
+		err = -ENOMEM;
+		goto err_out1;
+	}
+
+	ldev->bo_flink_names = drmHashCreate();
+	if (!ldev->bo_flink_names) {
+		err = -ENOMEM;
+		goto err_out2;
+	}
+
+	pthread_mutex_init(&ldev->bo_table_mutex, NULL);
 	*dev = ldev;
 	return 0;
+
+err_out2:
+	drmHashDestroy(ldev->bo_handles);
+err_out1:
+	lima_vamgr_fini(&ldev->vamgr);
+err_out0:
+	free(ldev);
+	return err;
 }
 
 void lima_device_delete(lima_device_handle dev)
 {
+	pthread_mutex_destroy(&dev->bo_table_mutex);
+	drmHashDestroy(dev->bo_handles);
+	drmHashDestroy(dev->bo_flink_names);
 	lima_vamgr_fini(&dev->vamgr);
 	free(dev);
 }

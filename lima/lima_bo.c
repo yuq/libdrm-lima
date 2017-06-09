@@ -74,6 +74,12 @@ int lima_bo_free(lima_bo_handle bo)
 	if (!atomic_dec_and_test(&bo->refcnt))
 		return 0;
 
+	pthread_mutex_lock(&bo->dev->bo_table_mutex);
+	drmHashDelete(bo->dev->bo_handles, bo->handle);
+	if (bo->flink_name)
+		drmHashDelete(bo->dev->bo_flink_names, bo->flink_name);
+	pthread_mutex_unlock(&bo->dev->bo_table_mutex);
+
 	err = drmIoctl(bo->dev->fd, DRM_IOCTL_GEM_CLOSE, &req);
 	free(bo);
 	return err;
@@ -135,4 +141,99 @@ int lima_bo_va_unmap(lima_bo_handle bo, uint32_t va)
 	};
 
 	return drmIoctl(bo->dev->fd, DRM_IOCTL_LIMA_GEM_VA, &req);
+}
+
+int lima_bo_export(lima_bo_handle bo, enum lima_bo_handle_type type,
+		   uint32_t *handle)
+{
+	int err;
+
+	switch (type) {
+	case lima_bo_handle_type_gem_flink_name:
+		if (!bo->flink_name) {
+			struct drm_gem_flink flink = {
+				.handle = bo->handle,
+				.name = 0,
+			};
+			err = drmIoctl(bo->dev->fd, DRM_IOCTL_GEM_FLINK, &flink);
+			if (err)
+				return err;
+
+			bo->flink_name = flink.name;
+
+			pthread_mutex_lock(&bo->dev->bo_table_mutex);
+			drmHashInsert(bo->dev->bo_flink_names, bo->flink_name, bo);
+			pthread_mutex_unlock(&bo->dev->bo_table_mutex);
+		}
+		*handle = bo->flink_name;
+		return 0;
+	case lima_bo_handle_type_kms:
+		pthread_mutex_lock(&bo->dev->bo_table_mutex);
+		drmHashInsert(bo->dev->bo_handles, bo->handle, bo);
+		pthread_mutex_unlock(&bo->dev->bo_table_mutex);
+
+		*handle = bo->handle;
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int lima_bo_import(lima_device_handle dev, enum lima_bo_handle_type type,
+		   uint32_t handle, struct lima_bo_import_result *result)
+{
+	int err;
+	lima_bo_handle bo = NULL;
+	struct drm_gem_open req = {0};
+
+	pthread_mutex_lock(&dev->bo_table_mutex);
+	switch (type) {
+	case lima_bo_handle_type_gem_flink_name:
+		drmHashLookup(dev->bo_flink_names, handle, (void **)&bo);
+		break;
+	case lima_bo_handle_type_kms:
+		drmHashLookup(dev->bo_handles, handle, (void **)&bo);
+		break;
+	}
+	pthread_mutex_unlock(&dev->bo_table_mutex);
+
+	if (bo) {
+		atomic_inc(&bo->refcnt);
+		result->bo = bo;
+		result->size = bo->size;
+		return 0;
+	}
+
+	bo = calloc(1, sizeof(*bo));
+	if (!bo)
+		return -ENOMEM;
+
+	bo->dev = dev;
+	atomic_set(&bo->refcnt, 1);
+
+	switch (type) {
+	case lima_bo_handle_type_gem_flink_name:
+		req.name = handle;
+		err = drmIoctl(dev->fd, DRM_IOCTL_GEM_OPEN, &req);
+		if (err) {
+			free(bo);
+			return err;
+		}
+		bo->handle = req.handle;
+		bo->flink_name = handle;
+		bo->size = req.size;
+
+		pthread_mutex_lock(&dev->bo_table_mutex);
+		drmHashInsert(bo->dev->bo_flink_names, bo->flink_name, bo);
+		pthread_mutex_unlock(&dev->bo_table_mutex);
+		break;
+	case lima_bo_handle_type_kms:
+		/* not possible */
+		free(bo);
+		return -EINVAL;
+	}
+
+	result->bo = bo;
+	result->size = bo->size;
+	return 0;
 }

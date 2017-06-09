@@ -50,6 +50,10 @@ struct lima_va_mgr {
 struct lima_device {
 	int fd;
 	struct lima_va_mgr vamgr;
+
+	pthread_mutex_t bo_table_mutex;
+	void *bo_handles;
+	void *bo_flink_names;
 };
 
 struct lima_bo {
@@ -60,6 +64,7 @@ struct lima_bo {
 	uint32_t handle;
 	uint64_t offset;
 	void *map;
+	uint32_t flink_name;
 };
 
 struct lima_submit {
