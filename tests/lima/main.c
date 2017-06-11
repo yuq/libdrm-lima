@@ -142,6 +142,10 @@ static void bo_test(lima_device_handle dev)
 	assert(!lima_bo_free(bo));
 	printf("bo kms export/import success\n");
 
+	assert(!lima_bo_wait(bo, LIMA_BO_WAIT_FLAG_READ, 0, false));
+	assert(!lima_bo_wait(bo, LIMA_BO_WAIT_FLAG_WRITE, 0, false));
+	printf("bo wait success\n");
+
 	assert(!lima_bo_free(bo));
 	printf("bo free success\n");
 }
