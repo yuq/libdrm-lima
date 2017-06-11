@@ -237,3 +237,19 @@ int lima_bo_import(lima_device_handle dev, enum lima_bo_handle_type type,
 	result->size = bo->size;
 	return 0;
 }
+
+int lima_bo_wait(lima_bo_handle bo, uint32_t op, uint64_t timeout_ns, bool relative)
+{
+	struct drm_lima_gem_wait req = {
+		.handle = bo->handle,
+		.op = op,
+		.timeout_ns = timeout_ns,
+	};
+	int err;
+
+	err = lima_get_absolute_timeout(&req.timeout_ns, relative);
+	if (err)
+		return err;
+
+	return drmIoctl(bo->dev->fd, DRM_IOCTL_LIMA_GEM_WAIT, &req);
+}

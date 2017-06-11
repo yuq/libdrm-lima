@@ -70,6 +70,11 @@ int lima_bo_export(lima_bo_handle bo, enum lima_bo_handle_type type,
 int lima_bo_import(lima_device_handle dev, enum lima_bo_handle_type type,
 		   uint32_t handle, struct lima_bo_import_result *result);
 
+#define LIMA_BO_WAIT_FLAG_READ   0x01
+#define LIMA_BO_WAIT_FLAG_WRITE  0x02
+
+int lima_bo_wait(lima_bo_handle bo, uint32_t op, uint64_t timeout_ns, bool relative);
+
 int lima_va_range_alloc(lima_device_handle dev, uint32_t size, uint32_t *va);
 int lima_va_range_free(lima_device_handle dev, uint32_t size, uint32_t va);
 

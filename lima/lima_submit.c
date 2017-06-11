@@ -117,14 +117,9 @@ int lima_submit_start(lima_submit_handle submit)
 	return 0;
 }
 
-int lima_submit_wait(lima_submit_handle submit, uint64_t timeout_ns, bool relative)
+drm_private int
+lima_get_absolute_timeout(uint64_t *timeout, bool relative)
 {
-	struct drm_lima_wait_fence req = {
-		.pipe = submit->pipe,
-		.fence = submit->fence,
-		.timeout_ns = timeout_ns,
-	};
-
 	if (relative) {
 		struct timespec current;
 		uint64_t current_ns;
@@ -136,8 +131,23 @@ int lima_submit_wait(lima_submit_handle submit, uint64_t timeout_ns, bool relati
 
 		current_ns = ((uint64_t)current.tv_sec) * 1000000000ull;
 		current_ns += current.tv_nsec;
-		req.timeout_ns += current_ns;
+		*timeout += current_ns;
 	}
+	return 0;
+}
+
+int lima_submit_wait(lima_submit_handle submit, uint64_t timeout_ns, bool relative)
+{
+	struct drm_lima_wait_fence req = {
+		.pipe = submit->pipe,
+		.fence = submit->fence,
+		.timeout_ns = timeout_ns,
+	};
+	int err;
+
+	err = lima_get_absolute_timeout(&req.timeout_ns, relative);
+	if (err)
+		return err;
 
 	return drmIoctl(submit->dev->fd, DRM_IOCTL_LIMA_WAIT_FENCE, &req);
 }

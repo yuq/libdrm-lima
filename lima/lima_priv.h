@@ -25,6 +25,7 @@
 #ifndef _LIMA_PRIV_H_
 #define _LIMA_PRIV_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <pthread.h>
 
@@ -82,5 +83,6 @@ struct lima_submit {
 
 drm_private int lima_vamgr_init(struct lima_va_mgr *mgr);
 drm_private void lima_vamgr_fini(struct lima_va_mgr *mgr);
+drm_private int lima_get_absolute_timeout(uint64_t *timeout, bool relative);
 
 #endif /* _LIMA_PRIV_H_ */
