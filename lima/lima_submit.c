@@ -58,7 +58,12 @@ void lima_submit_delete(lima_submit_handle submit)
 
 int lima_submit_add_bo(lima_submit_handle submit, lima_bo_handle bo, uint32_t flags)
 {
-	uint32_t new_bos = 8;
+	uint32_t i, new_bos = 8;
+
+	for (i = 0; i < submit->nr_bos; i++) {
+		if (submit->bos[i].handle == bo->handle)
+			return 0;
+	}
 
 	if (submit->bos && submit->max_bos == submit->nr_bos)
 		new_bos = submit->max_bos * 2;
